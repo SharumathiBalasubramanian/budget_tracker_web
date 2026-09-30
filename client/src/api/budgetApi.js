@@ -1,23 +1,8 @@
-import axios from 'axios';
-
-// Backend Base URL
-const API = axios.create({
-  baseURL: 'http://localhost:5000/api/budgets',
-  timeout: 5000,
-});
-
-// Auto-attach user's JWT token
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import client from './client';
 
 // 1. Fetch all budgets
 export const getBudgets = async () => {
-  const res = await API.get(`/?t=${Date.now()}`);
+  const res = await client.get(`/budgets?t=${Date.now()}`);
   return Array.isArray(res.data) ? res.data : res.data?.data || [];
 };
 
@@ -28,7 +13,7 @@ export const createBudget = async (data) => {
     monthlyLimit: Number(data.monthlyLimit || data.limit || data.amount),
     spent: Number(data.spent) || 0,
   };
-  const res = await API.post('/', payload);
+  const res = await client.post('/budgets', payload);
   return res.data?.data || res.data;
 };
 
@@ -39,12 +24,12 @@ export const updateBudget = async (id, data) => {
     monthlyLimit: Number(data.monthlyLimit || data.limit || data.amount),
     spent: Number(data.spent) || 0,
   };
-  const res = await API.put(`/${id}`, payload);
+  const res = await client.put(`/budgets/${id}`, payload);
   return res.data?.data || res.data;
 };
 
 // 4. Delete budget
 export const deleteBudget = async (id) => {
-  const res = await API.delete(`/${id}`);
+  const res = await client.delete(`/budgets/${id}`);
   return res.data;
 };

@@ -1,24 +1,12 @@
-import axios from 'axios';
+import client from './client';
 
-const API = axios.create({
-  baseURL: 'http://localhost:5000/api/transactions',
-  timeout: 5000,
-});
-
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Cache ஆகாமல் தடுக்க Date.now() சேர்க்கப்பட்டுள்ளது
+// Fetch all transactions
 export const getTransactions = async () => {
-  const res = await API.get(`/?t=${Date.now()}`);
+  const res = await client.get(`/transactions?t=${Date.now()}`);
   return Array.isArray(res.data) ? res.data : res.data?.data || [];
 };
 
+// Create transaction
 export const createTransaction = async (data) => {
   const payload = {
     ...data,
@@ -27,10 +15,11 @@ export const createTransaction = async (data) => {
     date: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
     note: data.note || '',
   };
-  const res = await API.post('/', payload);
+  const res = await client.post('/transactions', payload);
   return res.data?.data || res.data;
 };
 
+// Update transaction
 export const updateTransaction = async (id, data) => {
   const payload = {
     ...data,
@@ -39,11 +28,12 @@ export const updateTransaction = async (id, data) => {
     date: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
     note: data.note || '',
   };
-  const res = await API.put(`/${id}`, payload);
+  const res = await client.put(`/transactions/${id}`, payload);
   return res.data?.data || res.data;
 };
 
+// Delete transaction
 export const deleteTransaction = async (id) => {
-  const res = await API.delete(`/${id}`);
+  const res = await client.delete(`/transactions/${id}`);
   return res.data;
 };
