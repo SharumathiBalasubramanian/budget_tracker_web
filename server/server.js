@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -30,9 +31,8 @@ const authLimiter = rateLimit({
 
 // Configure CORS
 const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5173',
-  process.env.CLIENT_URL,
+  'https://budgettrackerz.netlify.app',
+  'http://localhost:5173', // or 3000 for local development
 ].filter(Boolean);
 
 app.use(
@@ -56,7 +56,6 @@ app.use('/api/auth', authLimiter);
 
 // -------------------------------------------------------------
 // Direct handler for the Dashboard AI Insights endpoint
-// Solves: POST http://localhost:5000/api/insights/gemini 404
 // -------------------------------------------------------------
 app.post('/api/insights/gemini', async (req, res) => {
   try {
@@ -99,6 +98,26 @@ app.use('/api/analytics', analyticsRoutes);
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', uptime: process.uptime() });
 });
+
+// Root endpoint (Fixes 404 on GET / when testing in the browser)
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'API server is running',
+    environment: process.env.NODE_ENV || 'development',
+  });
+});
+
+// -------------------------------------------------------------
+// Frontend Static Assets (Uncomment if serving a client build)
+// -------------------------------------------------------------
+// if (process.env.NODE_ENV === 'production') {
+//   const clientBuildPath = path.join(__dirname, '../client/dist');
+//   app.use(express.static(clientBuildPath));
+//   app.get('*', (req, res) => {
+//     res.sendFile(path.resolve(clientBuildPath, 'index.html'));
+//   });
+// }
 
 // Centralized error handling (MUST remain at the bottom)
 app.use(notFound);
