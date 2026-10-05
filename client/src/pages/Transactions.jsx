@@ -9,7 +9,7 @@ import {
   deleteTransaction,
 } from "../api/transactionApi";
 
-// Categories தனி folder இல்லாமல் இந்த ஃபைலிலேயே உள்ளது
+// Categories 
 const CATEGORIES = [
   "Food",
   "Transport",
@@ -89,7 +89,7 @@ export default function Transactions() {
         toast.success("Added successfully!");
       }
       resetForm();
-      await loadTransactions(); // உடனே Database-லிருந்து புதுப்பிக்கிறது
+      await loadTransactions(); 
     } catch (error) {
       console.error("Submit error:", error);
       toast.error("Failed to save transaction.");

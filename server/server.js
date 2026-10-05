@@ -32,13 +32,13 @@ const authLimiter = rateLimit({
 // Configure CORS
 const allowedOrigins = [
   'https://budgettrackerz.netlify.app',
-  'http://localhost:5173', // or 3000 for local development
-].filter(Boolean);
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (such as mobile apps or Postman)
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
@@ -51,13 +51,14 @@ app.use(
 // Body parser
 app.use(express.json());
 
-// Apply rate limiter specifically to auth endpoints
-app.use('/api/auth', authLimiter);
+// Apply rate limiter specifically to auth endpoints (both paths)
+app.use(['/api/auth', '/auth'], authLimiter);
 
 // -------------------------------------------------------------
 // Direct handler for the Dashboard AI Insights endpoint
+// (Supports both /api/insights/gemini and /insights/gemini)
 // -------------------------------------------------------------
-app.post('/api/insights/gemini', async (req, res) => {
+const handleInsights = async (req, res, next) => {
   try {
     const { transactions, budgets, prompt: userPrompt } = req.body;
 
@@ -81,25 +82,26 @@ Provide 2-3 brief, helpful spending tips.`;
     });
   } catch (error) {
     console.error('Error generating Gemini insights:', error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to generate AI insights.',
-    });
+    next(error);
   }
-});
+};
 
-// Standard API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/budgets', budgetRoutes);
-app.use('/api/analytics', analyticsRoutes);
+app.post(['/api/insights/gemini', '/insights/gemini'], handleInsights);
+
+// -------------------------------------------------------------
+// Standard API Routes (Dual-mounted for /api/* and /*)
+// -------------------------------------------------------------
+app.use(['/api/auth', '/auth'], authRoutes);
+app.use(['/api/transactions', '/transactions'], transactionRoutes);
+app.use(['/api/budgets', '/budgets'], budgetRoutes);
+app.use(['/api/analytics', '/analytics'], analyticsRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', uptime: process.uptime() });
 });
 
-// Root endpoint (Fixes 404 on GET / when testing in the browser)
+// Root endpoint
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
@@ -109,17 +111,8 @@ app.get('/', (req, res) => {
 });
 
 // -------------------------------------------------------------
-// Frontend Static Assets (Uncomment if serving a client build)
-// -------------------------------------------------------------
-// if (process.env.NODE_ENV === 'production') {
-//   const clientBuildPath = path.join(__dirname, '../client/dist');
-//   app.use(express.static(clientBuildPath));
-//   app.get('*', (req, res) => {
-//     res.sendFile(path.resolve(clientBuildPath, 'index.html'));
-//   });
-// }
-
 // Centralized error handling (MUST remain at the bottom)
+// -------------------------------------------------------------
 app.use(notFound);
 app.use(errorHandler);
 
